@@ -1,0 +1,42 @@
+<script src="https://js.stripe.com/v3/"></script>
+
+<form id="payment-form" data-secret="<%= @payment_intent.client_secret %>">
+  <div id="card-element"><!-- Stripe Element will insert here --></div>
+  <button id="submit">Pay</button>
+</form>
+
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const stripe = Stripe("<%= ENV['STRIPE_PUBLISHABLE_KEY'] %>");
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
+    const form = document.getElementById("payment-form");
+    const submitButton = document.getElementById("submit");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // Disable button to prevent multiple clicks
+      submitButton.disabled = true;
+      submitButton.textContent = "Processing...";
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(form.dataset.secret, {
+        payment_method: {
+          card: card,
+        },
+      });
+
+      if (error) {
+        alert(error.message);
+        submitButton.disabled = false;
+        submitButton.textContent = "Pay";
+      } else {
+        alert("Payment succeeded!");
+        window.location.href = "/"; // redirect on success
+      }
+    });
+  });
+</script>
+
